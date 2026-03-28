@@ -650,6 +650,188 @@ function setupButtonEffects() {
     });
 }
 
+// ── Stepper logic ──
+const TOTAL_STEPS = 5; // steps 0-4
+
+function initStepper(form) {
+    const steps = form.querySelectorAll('.stepper-step');
+    const bar = form.querySelector('.stepper-progress-bar');
+
+    function goToStep(idx) {
+        steps.forEach(s => {
+            s.style.display = parseInt(s.dataset.step) === idx ? '' : 'none';
+            if (parseInt(s.dataset.step) === idx) {
+                s.style.animation = 'none';
+                s.offsetHeight; // reflow
+                s.style.animation = '';
+            }
+        });
+        if (bar) bar.style.width = ((idx + 1) / TOTAL_STEPS * 100) + '%';
+    }
+
+    // Next buttons
+    form.querySelectorAll('.btn-stepper-next').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const currentStep = parseInt(btn.dataset.next) - 1;
+            const currentStepEl = form.querySelector(`.stepper-step[data-step="${currentStep}"]`);
+
+            // Validate current step
+            if (currentStep === 0) {
+                const nameInput = currentStepEl.querySelector('input[name="name"]');
+                if (!nameInput.value.trim()) {
+                    nameInput.focus();
+                    nameInput.reportValidity();
+                    return;
+                }
+            }
+
+            if (currentStep === 1) {
+                const attending = form.querySelector('input[name="attending"]:checked');
+                if (!attending) {
+                    currentStepEl.querySelector('input[name="attending"]').reportValidity();
+                    return;
+                }
+                // If "not attending" (value=0) — skip to submit immediately
+                if (attending.value === '0') {
+                    submitRsvpForm(form);
+                    return;
+                }
+            }
+
+            goToStep(parseInt(btn.dataset.next));
+        });
+    });
+
+    // Back buttons
+    form.querySelectorAll('.btn-stepper-back').forEach(btn => {
+        btn.addEventListener('click', () => {
+            goToStep(parseInt(btn.dataset.back));
+        });
+    });
+
+    return { goToStep };
+}
+
+function getFormPayload(form, token) {
+    const data = new FormData(form);
+    return {
+        user_token: token,
+        name:               data.get('name'),
+        attending:          data.get('attending'),
+        food_preference:    data.get('food_preference'),
+        alcohol_preferences: data.getAll('alcohol_preferences[]'),
+        food_allergy:       data.get('food_allergy'),
+    };
+}
+
+async function submitRsvpForm(form) {
+    const token = window.userToken;
+    const payload = getFormPayload(form, token);
+
+    try {
+        const res = await fetch('/api/rsvp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': window.csrfToken,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+            localStorage.setItem('wedding_rsvp_submitted', '1');
+
+            // Show success on inline form
+            showFormSuccess('rsvp-form', 'form-success');
+            // Show success on modal form
+            showFormSuccess('rsvp-modal-form', 'modal-form-success');
+
+            // Sync data between forms
+            syncFormData(form);
+
+            // Success animations
+            const successEl = form.closest('.rsvp-modal-body')
+                ? '#modal-form-success' : '#form-success';
+
+            anime({
+                targets: successEl,
+                scale: [0.9, 1],
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutBack',
+            });
+            anime({
+                targets: successEl + ' .success-icon',
+                scale: [0, 1],
+                rotate: ['0deg', '360deg'],
+                duration: 800,
+                delay: 200,
+                easing: 'easeOutElastic(1, .6)',
+            });
+        }
+    } catch (err) {
+        console.error('RSVP submit error:', err);
+    }
+}
+
+function syncFormData(sourceForm) {
+    const targetId = sourceForm.id === 'rsvp-form' ? 'rsvp-modal-form' : 'rsvp-form';
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const data = new FormData(sourceForm);
+
+    const nameInput = target.querySelector('input[name="name"]');
+    if (nameInput) nameInput.value = data.get('name') || '';
+
+    const att = data.get('attending');
+    if (att !== null) {
+        const radio = target.querySelector(`input[name="attending"][value="${att}"]`);
+        if (radio) radio.checked = true;
+    }
+
+    const food = data.get('food_preference');
+    if (food) {
+        const radio = target.querySelector(`input[name="food_preference"][value="${food}"]`);
+        if (radio) radio.checked = true;
+    }
+
+    target.querySelectorAll('input[name="alcohol_preferences[]"]').forEach(cb => cb.checked = false);
+    data.getAll('alcohol_preferences[]').forEach(val => {
+        const cb = target.querySelector(`input[name="alcohol_preferences[]"][value="${val}"]`);
+        if (cb) cb.checked = true;
+    });
+
+    const allergy = target.querySelector('textarea[name="food_allergy"]');
+    if (allergy) allergy.value = data.get('food_allergy') || '';
+}
+
+function fillForm(form, g) {
+    if (!form || !g) return;
+
+    const nameInput = form.querySelector('input[name="name"]');
+    if (nameInput && g.name) nameInput.value = g.name;
+
+    const att = form.querySelector(`input[name="attending"][value="${g.attending ? '1' : '0'}"]`);
+    if (att) att.checked = true;
+
+    if (g.food_preference) {
+        const food = form.querySelector(`input[name="food_preference"][value="${g.food_preference}"]`);
+        if (food) food.checked = true;
+    }
+
+    if (g.alcohol_preferences) {
+        g.alcohol_preferences.forEach(val => {
+            const cb = form.querySelector(`input[name="alcohol_preferences[]"][value="${val}"]`);
+            if (cb) cb.checked = true;
+        });
+    }
+
+    const allergy = form.querySelector('textarea[name="food_allergy"]');
+    if (allergy && g.food_allergy) allergy.value = g.food_allergy;
+}
+
 // ── Prefill RSVP from server ──
 async function prefillRsvp(token) {
     try {
@@ -659,37 +841,12 @@ async function prefillRsvp(token) {
         if (!res.ok) return;
         const g = await res.json();
         if (!g || g.id == null) return;
-        const form = document.getElementById('rsvp-form');
-        if (!form) return;
 
-        // Name
-        const nameInput = form.querySelector('input[name="name"]');
-        if (nameInput && g.name) nameInput.value = g.name;
+        fillForm(document.getElementById('rsvp-form'), g);
+        fillForm(document.getElementById('rsvp-modal-form'), g);
 
-        // Attending
-        const att = form.querySelector(`input[name="attending"][value="${g.attending ? '1' : '0'}"]`);
-        if (att) att.checked = true;
-
-        // Food preference
-        if (g.food_preference) {
-            const food = form.querySelector(`input[name="food_preference"][value="${g.food_preference}"]`);
-            if (food) food.checked = true;
-        }
-
-        // Alcohol
-        if (g.alcohol_preferences) {
-            g.alcohol_preferences.forEach(val => {
-                const cb = form.querySelector(`input[name="alcohol_preferences[]"][value="${val}"]`);
-                if (cb) cb.checked = true;
-            });
-        }
-
-        // Allergy
-        const allergy = form.querySelector('textarea[name="food_allergy"]');
-        if (allergy && g.food_allergy) allergy.value = g.food_allergy;
-
-        // Show "already submitted" state
-        showFormSuccess(true);
+        showFormSuccess('rsvp-form', 'form-success');
+        showFormSuccess('rsvp-modal-form', 'modal-form-success');
 
     } catch (e) {
         // No existing RSVP — leave form empty
@@ -697,79 +854,91 @@ async function prefillRsvp(token) {
 }
 
 // ── Form success state ──
-function showFormSuccess(editable = false) {
-    const form    = document.getElementById('rsvp-form');
-    const success = document.getElementById('form-success');
+function showFormSuccess(formId, successId) {
+    const form    = document.getElementById(formId);
+    const success = document.getElementById(successId);
     if (!form || !success) return;
 
     form.style.display    = 'none';
     success.style.display = 'block';
 }
 
+function hideFormSuccess(formId, successId, stepper) {
+    const form    = document.getElementById(formId);
+    const success = document.getElementById(successId);
+    if (!form || !success) return;
+
+    success.style.display = 'none';
+    form.style.display    = '';
+    if (stepper) stepper.goToStep(0);
+}
+
 // ── Setup RSVP form ──
 function setupRsvpForm(token) {
     const form    = document.getElementById('rsvp-form');
     const editBtn = document.getElementById('btn-edit-rsvp');
-    const success = document.getElementById('form-success');
 
     if (!form) return;
 
+    const stepper = initStepper(form);
+
     editBtn?.addEventListener('click', () => {
-        success.style.display = 'none';
-        form.style.display    = '';
+        hideFormSuccess('rsvp-form', 'form-success', stepper);
     });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        await submitRsvpForm(form);
+    });
+}
 
-        const data = new FormData(form);
-        const payload = {
-            user_token: token,
-            name:               data.get('name'),
-            attending:          data.get('attending'),
-            food_preference:    data.get('food_preference'),
-            alcohol_preferences: data.getAll('alcohol_preferences[]'),
-            food_allergy:       data.get('food_allergy'),
-        };
+// ── Setup RSVP Modal ──
+function setupRsvpModal(token) {
+    const overlay   = document.getElementById('rsvp-modal');
+    const openBtn   = document.getElementById('btn-open-rsvp-modal');
+    const closeBtn  = document.getElementById('rsvp-modal-close');
+    const form      = document.getElementById('rsvp-modal-form');
+    const editBtn   = document.getElementById('btn-edit-modal-rsvp');
 
-        try {
-            const res = await fetch('/api/rsvp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': window.csrfToken,
-                },
-                body: JSON.stringify(payload),
-            });
+    if (!overlay) return;
 
-            if (res.ok) {
-                localStorage.setItem('wedding_rsvp_submitted', '1');
+    let stepper;
+    if (form) {
+        stepper = initStepper(form);
 
-                // Success bounce animation
-                anime({
-                    targets: '#form-success',
-                    scale: [0.9, 1],
-                    opacity: [0, 1],
-                    duration: 500,
-                    easing: 'easeOutBack',
-                });
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await submitRsvpForm(form);
+        });
+    }
 
-                // Success icon pulse
-                anime({
-                    targets: '.success-icon',
-                    scale: [0, 1],
-                    rotate: ['0deg', '360deg'],
-                    duration: 800,
-                    delay: 200,
-                    easing: 'easeOutElastic(1, .6)',
-                });
+    editBtn?.addEventListener('click', () => {
+        hideFormSuccess('rsvp-modal-form', 'modal-form-success', stepper);
+    });
 
-                showFormSuccess();
-            }
-        } catch (err) {
-            console.error('RSVP submit error:', err);
-        }
+    function openModal() {
+        overlay.style.display = 'flex';
+        requestAnimationFrame(() => {
+            overlay.classList.add('is-visible');
+        });
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        overlay.classList.remove('is-visible');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+        document.body.style.overflow = '';
+    }
+
+    openBtn?.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.style.display !== 'none') closeModal();
     });
 }
 
@@ -1367,6 +1536,7 @@ export function initInvitation() {
         const token = window.userToken || localStorage.getItem('wedding_token');
         if (token) {
             setupRsvpForm(token);
+            setupRsvpModal(token);
             prefillRsvp(token);
         }
     });

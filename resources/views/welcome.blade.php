@@ -242,6 +242,10 @@
             <div class="between-text-inner">
             {!! nl2br(e($blocks['between_text']['text'] ?? '')) !!}
             </div>
+
+            <div class="between-text-btn-wrap">
+                <button type="button" class="btn-guest-anketa jost" id="btn-open-rsvp-modal">Анкета гостя</button>
+            </div>
         </div>
     </section>
     @endif
@@ -652,60 +656,89 @@
                 <button class="btn-edit jost" id="btn-edit-rsvp">Изменить ответ</button>
             </div>
 
-            <form id="rsvp-form" class="rsvp-form">
+            <form id="rsvp-form" class="rsvp-form stepper-form">
                 @csrf
 
-                <div class="form-group reveal">
-                    <label class="form-label jost">Имя Фамилия</label>
-                    <input type="text" name="name" class="form-input jost" placeholder="Введите текст" required>
+                <div class="stepper-progress">
+                    <div class="stepper-progress-bar" data-step="0"></div>
                 </div>
 
-                <div class="form-group reveal" data-delay="80">
-                    <label class="form-label jost">{{ $ql['attending'] ?? '1. Сможете ли вы присоединиться к нам?' }}</label>
-                    <div class="radio-group">
-                        @foreach(($fo['attending'] ?? []) as $opt)
-                        <label class="radio-option">
-                            <input type="radio" name="attending" value="{{ e($opt['value']) }}" @if($loop->first) required @endif>
-                            <span class="radio-custom"></span>
-                            <span class="jost">{{ $opt['label'] }}</span>
-                        </label>
-                        @endforeach
+                <div class="stepper-step" data-step="0">
+                    <div class="form-group">
+                        <label class="form-label jost">Имя Фамилия</label>
+                        <input type="text" name="name" class="form-input jost" placeholder="Введите текст" required>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="1">Далее</button>
                     </div>
                 </div>
 
-                <div class="form-group reveal" data-delay="160">
-                    <label class="form-label jost">{{ $ql['food'] ?? '2. Есть ли у вас предпочтения по еде?' }}</label>
-                    <div class="radio-group">
-                        @foreach(($fo['food'] ?? []) as $opt)
-                        <label class="radio-option">
-                            <input type="radio" name="food_preference" value="{{ e($opt['value']) }}">
-                            <span class="radio-custom"></span>
-                            <span class="jost">{{ $opt['label'] }}</span>
-                        </label>
-                        @endforeach
+                <div class="stepper-step" data-step="1" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['attending'] ?? '1. Сможете ли вы присоединиться к нам?' }}</label>
+                        <div class="radio-group">
+                            @foreach(($fo['attending'] ?? []) as $opt)
+                            <label class="radio-option">
+                                <input type="radio" name="attending" value="{{ e($opt['value']) }}" @if($loop->first) required @endif>
+                                <span class="radio-custom"></span>
+                                <span class="jost">{{ $opt['label'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="0">Назад</button>
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="2">Далее</button>
                     </div>
                 </div>
 
-                <div class="form-group reveal" data-delay="240">
-                    <label class="form-label jost">{{ $ql['alcohol'] ?? '3. Какой алкоголь вы предпочитаете?' }}</label>
-                    <div class="checkbox-group">
-                        @foreach(($fo['alcohol'] ?? []) as $opt)
-                        <label class="checkbox-option">
-                            <input type="checkbox" name="alcohol_preferences[]" value="{{ e($opt['value']) }}">
-                            <span class="checkbox-custom checkbox-box"></span>
-                            <span class="jost">{{ $opt['label'] }}</span>
-                        </label>
-                        @endforeach
+                <div class="stepper-step" data-step="2" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['food'] ?? '2. Есть ли у вас предпочтения по еде?' }}</label>
+                        <div class="radio-group">
+                            @foreach(($fo['food'] ?? []) as $opt)
+                            <label class="radio-option">
+                                <input type="radio" name="food_preference" value="{{ e($opt['value']) }}">
+                                <span class="radio-custom"></span>
+                                <span class="jost">{{ $opt['label'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="1">Назад</button>
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="3">Далее</button>
                     </div>
                 </div>
 
-                <div class="form-group reveal" data-delay="320">
-                    <label class="form-label jost">{{ $ql['allergy'] ?? '4. Пищевая аллергия' }}</label>
-                    <textarea name="food_allergy" class="form-input form-textarea jost" placeholder="Введите текст" rows="3"></textarea>
+                <div class="stepper-step" data-step="3" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['alcohol'] ?? '3. Какой алкоголь вы предпочитаете?' }}</label>
+                        <div class="checkbox-group">
+                            @foreach(($fo['alcohol'] ?? []) as $opt)
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="alcohol_preferences[]" value="{{ e($opt['value']) }}">
+                                <span class="checkbox-custom checkbox-box"></span>
+                                <span class="jost">{{ $opt['label'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="2">Назад</button>
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="4">Далее</button>
+                    </div>
                 </div>
 
-                <div class="form-group reveal" data-delay="400">
-                    <button type="submit" class="btn-submit jost">Отправить</button>
+                <div class="stepper-step" data-step="4" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['allergy'] ?? '4. Пищевая аллергия' }}</label>
+                        <textarea name="food_allergy" class="form-input form-textarea jost" placeholder="Введите текст" rows="3"></textarea>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="3">Назад</button>
+                        <button type="submit" class="btn-submit jost">Отправить</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -795,6 +828,117 @@
     @endif
 
 </div><!-- end invitation-wrap -->
+
+<!-- ── RSVP MODAL ── -->
+@php
+    $formBlock = $formBlock ?? ($blocks['form'] ?? []);
+    $fo = $fo ?? ($formBlock['form_options'] ?? []);
+    $ql = $ql ?? ($formBlock['question_labels'] ?? []);
+@endphp
+<div id="rsvp-modal" class="rsvp-modal-overlay" style="display:none;">
+    <div class="rsvp-modal">
+        <button type="button" class="rsvp-modal-close" id="rsvp-modal-close" aria-label="Закрыть">&times;</button>
+        <h3 class="script rsvp-modal-title">Анкета гостя</h3>
+
+        <div class="rsvp-modal-body">
+            <div id="modal-form-success" class="form-success" style="display:none;">
+                <div class="success-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <polyline points="4 12 9 17 20 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <p class="cormorant" style="font-size:1.3rem; margin-top:16px; color:var(--dark);">Спасибо! Ваш ответ сохранён.</p>
+                <button class="btn-edit jost" id="btn-edit-modal-rsvp">Изменить ответ</button>
+            </div>
+
+            <form id="rsvp-modal-form" class="rsvp-form stepper-form">
+                @csrf
+
+                <div class="stepper-progress">
+                    <div class="stepper-progress-bar" data-step="0"></div>
+                </div>
+
+                <div class="stepper-step" data-step="0">
+                    <div class="form-group">
+                        <label class="form-label jost">Имя Фамилия</label>
+                        <input type="text" name="name" class="form-input jost" placeholder="Введите текст" required>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="1">Далее</button>
+                    </div>
+                </div>
+
+                <div class="stepper-step" data-step="1" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['attending'] ?? '1. Сможете ли вы присоединиться к нам?' }}</label>
+                        <div class="radio-group">
+                            @foreach(($fo['attending'] ?? []) as $opt)
+                            <label class="radio-option">
+                                <input type="radio" name="attending" value="{{ e($opt['value']) }}" @if($loop->first) required @endif>
+                                <span class="radio-custom"></span>
+                                <span class="jost">{{ $opt['label'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="0">Назад</button>
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="2">Далее</button>
+                    </div>
+                </div>
+
+                <div class="stepper-step" data-step="2" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['food'] ?? '2. Есть ли у вас предпочтения по еде?' }}</label>
+                        <div class="radio-group">
+                            @foreach(($fo['food'] ?? []) as $opt)
+                            <label class="radio-option">
+                                <input type="radio" name="food_preference" value="{{ e($opt['value']) }}">
+                                <span class="radio-custom"></span>
+                                <span class="jost">{{ $opt['label'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="1">Назад</button>
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="3">Далее</button>
+                    </div>
+                </div>
+
+                <div class="stepper-step" data-step="3" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['alcohol'] ?? '3. Какой алкоголь вы предпочитаете?' }}</label>
+                        <div class="checkbox-group">
+                            @foreach(($fo['alcohol'] ?? []) as $opt)
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="alcohol_preferences[]" value="{{ e($opt['value']) }}">
+                                <span class="checkbox-custom checkbox-box"></span>
+                                <span class="jost">{{ $opt['label'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="2">Назад</button>
+                        <button type="button" class="btn-stepper-next btn-submit jost" data-next="4">Далее</button>
+                    </div>
+                </div>
+
+                <div class="stepper-step" data-step="4" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label jost">{{ $ql['allergy'] ?? '4. Пищевая аллергия' }}</label>
+                        <textarea name="food_allergy" class="form-input form-textarea jost" placeholder="Введите текст" rows="3"></textarea>
+                    </div>
+                    <div class="stepper-nav">
+                        <button type="button" class="btn-stepper-back jost" data-back="3">Назад</button>
+                        <button type="submit" class="btn-submit jost">Отправить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

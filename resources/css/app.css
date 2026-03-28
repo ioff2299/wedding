@@ -1689,6 +1689,157 @@ section {
 }
 
 
+/* ── GUEST ANKETA BUTTON (between-text) ── */
+.between-text-btn-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+}
+.btn-guest-anketa {
+    display: inline-block;
+    padding: 12px 32px;
+    background: linear-gradient(135deg, var(--burgundy) 0%, var(--burgundy-2) 100%);
+    color: var(--cream-light);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(124,28,45,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+}
+.btn-guest-anketa::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    transition: left 0.5s ease;
+}
+.btn-guest-anketa:hover::before { left: 100%; }
+.btn-guest-anketa:hover {
+    background: linear-gradient(135deg, var(--burgundy-2) 0%, #4A1018 100%);
+    box-shadow: 0 8px 28px rgba(124,28,45,0.4);
+    transform: translateY(-2px);
+}
+
+/* ── STEPPER FORM ── */
+.stepper-form {
+    position: relative;
+}
+.stepper-progress {
+    width: 100%;
+    height: 3px;
+    background: rgba(124,28,45,0.08);
+    border-radius: 3px;
+    margin-bottom: 28px;
+    overflow: hidden;
+}
+.stepper-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--burgundy), var(--gold));
+    border-radius: 3px;
+    width: 20%;
+    transition: width 0.4s ease;
+}
+.stepper-step {
+    animation: stepFadeIn 0.35s ease-out;
+}
+@keyframes stepFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.stepper-nav {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+.stepper-nav .btn-submit {
+    flex: 1;
+}
+.btn-stepper-back {
+    flex: 0 0 auto;
+    padding: 14px 24px;
+    background: transparent;
+    border: 1px solid rgba(124,28,45,0.25);
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--burgundy);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-stepper-back:hover {
+    background: rgba(124,28,45,0.06);
+    border-color: rgba(124,28,45,0.4);
+}
+
+/* ── RSVP MODAL ── */
+.rsvp-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(44,24,16,0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.rsvp-modal-overlay.is-visible {
+    opacity: 1;
+}
+.rsvp-modal {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background:
+        radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(250,246,238,0.98) 0%, rgba(245,239,224,0.96) 100%);
+    border: 1px solid rgba(124,28,45,0.1);
+    border-radius: 12px;
+    padding: 36px 28px 32px;
+    box-shadow: 0 20px 60px rgba(44,24,16,0.2), 0 0 0 1px rgba(201,169,110,0.1);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.35s ease;
+}
+.rsvp-modal-overlay.is-visible .rsvp-modal {
+    transform: translateY(0) scale(1);
+}
+.rsvp-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--text-light);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.2s;
+}
+.rsvp-modal-close:hover { color: var(--burgundy); }
+.rsvp-modal-title {
+    text-align: center;
+    font-size: 1.8rem;
+    color: var(--burgundy);
+    margin-bottom: 24px;
+}
+.rsvp-modal-body .form-wrap {
+    max-width: 100%;
+}
+
 /* ── FOOTER ── */
 .section-footer {
     --section-edge-pad-x: 28px;
